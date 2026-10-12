@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:developer.cisco.com)",
+      "WebFetch(domain:lantern.splunk.com)"
+    ]
+  }
+}
