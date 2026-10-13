@@ -2,9 +2,12 @@
 # 스펙 원본: src/main/resources/openapi/cyber-vision-3.0.json
 cyber-vision:
   # Center 주소와 API 토큰은 여기에 두지 않는다.
-  # 외부 시스템이 POST /api/cyber-vision/connection 으로 주입하고,
-  # cv_connection 테이블(DDL: src/main/resources/db/cv_connection.sql)에 보관된다.
-  # 기동 시 DB 에서 가장 최근 것을 읽어 메모리에 올린다.
+  # 외부 시스템이 POST /api/cyber-vision/connection 으로 주입한다.
+  #
+  # 현재는 DB 미사용 모드라 메모리에만 보관한다 — 재기동하면 접속 정보가 사라지므로
+  # 기동할 때마다 다시 주입해야 한다. DB 보관(cv_connection 테이블,
+  # DDL: src/main/resources/db/cv_connection.sql)을 되살리려면
+  # 아래 datasource / jpa 주석 블록과 connection 패키지의 DB 코드를 함께 복구한다.
 
   # API 베이스 경로. 스펙의 basePath 로, 환경이 아니라 API 계약에 속하므로 설정에 남긴다.
   base-path: /api/3.0
@@ -52,46 +55,53 @@ server:
 spring:
   application:
     name: cvGateway
-  datasource:
-    #logging용
-    #driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-    #url: jdbc:log4jdbc:sqlserver://192.168.2.151:1433;databaseName=dsaWatcher;username=dw;password=dw;sendStringParametersAsUnicode=false;
-    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
-    #sendStringParametersAsUnicode=false 추가
-    #https://sqlwizardblog.wordpress.com/2018/07/29/performance-impact-of-jdbc-connectionstring-property-sendstringparametersasunicode/
-    url: jdbc:sqlserver://localhost:1433;databaseName=dsaWatcher;username=dw;password=dw;sendStringParametersAsUnicode=false;encrypt=false;loginTimeout=10;
-    #url: jdbc:sqlserver://192.168.0.15:1433;databaseName=dsaWatcher;username=dw;password=dw;sendStringParametersAsUnicode=false;encrypt=false;loginTimeout=10;
-    hikari:
-      connection-timeout: 30000    # 커넥션 타임 아웃 (10s) - DB 장애 시 스레드 빠른 실패 처리
-      #idle-timeout: 600000        # pool 미사용 커넥션 유지 시간 (10m)
-      max-lifetime: 1800000       # pool 에서 커넥션 최대 수명 시간 (30m) - 죽은 연결 자동 교체
-      keepalive-time: 30000       # DB가 유휴 연결을 끊기 전에 keepalive 전송 (30s)
-      #minimum-idle: 150          # 최소 커넥션 유지 개수 (default: same as maximumPoolSize)
-      maximum-pool-size: 10 # pool에 유지시킬 수 있는 최대 커넥션 수
-      pool-name: dw-hikari-pool
-      data-source-properties:
-        cachePrepStmts: true
-        prepStmtCacheSize: 250
-        prepStmtCacheSqlLimit: 2048
-        useServerPrepStmts: true
-        useLocalSessionState: true
-        rewriteBatchedStatements: true
-        cacheResultSetMetadata: true
-        cacheServerConfiguration: true
-        elideSetAutoCommits: true
-        maintainTimeStats: false
-  jpa:
-    open-in-view: false
-    generate-ddl: false
-    show-sql: false
-    hibernate:
-      ddl-auto: update
-      #ddl-auto: create-drop
-    properties:
-      hibernate:
-        format_sql: true
-        generate_statistics: false
-        jdbc:
-          batch_size: 100
-        order_inserts: true
-        dialect: org.hibernate.dialect.SQLServerDialect
+
+# === DB 미사용 모드 ===
+# DB 없이 기동하기 위해 datasource / jpa 설정을 통째로 내렸다.
+# build.gradle 의 JPA·MS SQL 의존성도 함께 주석 처리되어 있으므로,
+# 되살릴 때는 아래 블록과 의존성, 그리고 connection 패키지의
+# Entity / Repository / Service 의 DB 코드를 같이 복구한다.
+#
+#  datasource:
+#    #logging용
+#    #driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+#    #url: jdbc:log4jdbc:sqlserver://192.168.2.151:1433;databaseName=dsaWatcher;username=dw;password=dw;sendStringParametersAsUnicode=false;
+#    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+#    #sendStringParametersAsUnicode=false 추가
+#    #https://sqlwizardblog.wordpress.com/2018/07/29/performance-impact-of-jdbc-connectionstring-property-sendstringparametersasunicode/
+#    url: jdbc:sqlserver://localhost:1433;databaseName=dsaWatcher;username=dw;password=dw;sendStringParametersAsUnicode=false;encrypt=false;loginTimeout=10;
+#    #url: jdbc:sqlserver://192.168.0.15:1433;databaseName=dsaWatcher;username=dw;password=dw;sendStringParametersAsUnicode=false;encrypt=false;loginTimeout=10;
+#    hikari:
+#      connection-timeout: 30000    # 커넥션 타임 아웃 (10s) - DB 장애 시 스레드 빠른 실패 처리
+#      #idle-timeout: 600000        # pool 미사용 커넥션 유지 시간 (10m)
+#      max-lifetime: 1800000       # pool 에서 커넥션 최대 수명 시간 (30m) - 죽은 연결 자동 교체
+#      keepalive-time: 30000       # DB가 유휴 연결을 끊기 전에 keepalive 전송 (30s)
+#      #minimum-idle: 150          # 최소 커넥션 유지 개수 (default: same as maximumPoolSize)
+#      maximum-pool-size: 10 # pool에 유지시킬 수 있는 최대 커넥션 수
+#      pool-name: dw-hikari-pool
+#      data-source-properties:
+#        cachePrepStmts: true
+#        prepStmtCacheSize: 250
+#        prepStmtCacheSqlLimit: 2048
+#        useServerPrepStmts: true
+#        useLocalSessionState: true
+#        rewriteBatchedStatements: true
+#        cacheResultSetMetadata: true
+#        cacheServerConfiguration: true
+#        elideSetAutoCommits: true
+#        maintainTimeStats: false
+#  jpa:
+#    open-in-view: false
+#    generate-ddl: false
+#    show-sql: false
+#    hibernate:
+#      ddl-auto: update
+#      #ddl-auto: create-drop
+#    properties:
+#      hibernate:
+#        format_sql: true
+#        generate_statistics: false
+#        jdbc:
+#          batch_size: 100
+#        order_inserts: true
+#        dialect: org.hibernate.dialect.SQLServerDialect

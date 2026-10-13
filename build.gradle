@@ -30,7 +30,14 @@ dependencies {
 	// /api-docs 요청이 NoSuchMethodError 로 터진다 (Swagger 의 "Failed to load API definition").
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
 
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	// === DB 미사용 모드 ===
+	// DB 없이 기동하기 위해 JPA 와 MS SQL 드라이버를 내렸다.
+	// 되살릴 때는 아래 세 줄과 함께
+	//   - application.yaml 의 spring.datasource / spring.jpa 블록
+	//   - CyberVisionConnectionEntity / CyberVisionConnectionRepository
+	//   - CyberVisionConnectionService 의 repository 관련 코드
+	// 를 같이 복구한다.
+	//implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 	// Feign 기본 클라이언트(HttpURLConnection)는 PATCH 를 지원하지 않는다.
@@ -39,9 +46,9 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	//ms-sql
-	implementation 'com.microsoft.sqlserver:mssql-jdbc:12.6.2.jre11'
+	//implementation 'com.microsoft.sqlserver:mssql-jdbc:12.6.2.jre11'
 	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	//testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
